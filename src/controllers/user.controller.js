@@ -25,7 +25,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!emailPattern.test(email)) {
     throw new ApiError(400, "Incorrect Email");
   }
-  const existedUser = User.findOne({
+  const existedUser = await User.findOne({
     // to check multipe values
     $or: [{ userName }, { email }],
   });
@@ -33,29 +33,40 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "Username or Email already exists!!");
   }
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
-  console.log(req.files);
+  // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  let coverImageLocalPath = "";
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
+  // console.log(req.files);
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar not found");
   }
   // uploading on cloudinary
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-  const coverImage = await uploadOnCloudinary(coverImageLocalPathLocalPath);
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
   if (!avatar) {
     throw new ApiError("Avatar file required");
   }
   const user = await User.create({
     fullName,
     avatar: avatar.url,
-    coverImage: coverImage.url || "",
+    coverImage: coverImage == null ? "" : coverImage.url,
     email,
     password,
-    userName: userName.toLoweCase(),
+    userName: userName.toLowerCase(),
   });
-  console.log(user);
+  // console.log(user);
   // removing password and token
-  const createdUser = User.findById(user._id).select("-password -refreshToken");
-  if (createdUser) {
+  const createdUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+  // console.log(createdUser);
+  if (!createdUser) {
     throw new ApiError("Something went wrong while registering");
   }
   return res
