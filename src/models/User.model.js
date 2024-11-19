@@ -60,6 +60,7 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcryptjs.compare(password, this.password);
 };
+// usually short term used
 userSchema.methods.generateAccessToken = function () {
  return jwt.sign(
     {
@@ -74,6 +75,7 @@ userSchema.methods.generateAccessToken = function () {
     }
   );
 };
+// usually long term used
 userSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
